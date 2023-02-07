@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  auctioneer_webapi:
+    build: .
+    volumes:
+      - './:/opt/services/src'
+    ports:
+       - "8000:8000"
