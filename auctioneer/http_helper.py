@@ -4,6 +4,8 @@ from typing import List, Dict
 import aiohttp
 import asyncio.exceptions
 
+import data_model
+
 
 async def send_post_request(url: str, data: Dict, session: aiohttp.ClientSession):
     async with session.post(url, json=data) as resp:
@@ -14,9 +16,18 @@ async def send_post_request(url: str, data: Dict, session: aiohttp.ClientSession
 async def send_get_request(url: str, data: Dict, session: aiohttp.ClientSession, callback: callable = None,
                            context=None):
     try:
-        async with await session.get(url, json=data, timeout=0.2) as resp:
-            if callback is not None:
-                callback(context['bidder_id'])
-            return await resp.json()
-    except asyncio.exceptions.TimeoutError:
+        task = asyncio.ensure_future(session.get(url, json=data))
+        resp = await asyncio.wait_for(task, timeout=0.2)
+        return await resp.json()
+    except asyncio.TimeoutError as _:
         pass
+
+
+async def trigger_bidders_to_bid(bidders: List[data_model.Bidder]):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for bidder in bidders:
+            url = f"http://{bidder.host}:{bidder.port}/webhook/send_bid"
+            print(f"sending bid request to {url}")
+            tasks.append(send_get_request(url, {}, session))
+        return await asyncio.gather(*tasks)
