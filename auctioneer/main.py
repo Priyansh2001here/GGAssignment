@@ -31,8 +31,6 @@ async def register_auction(auction_id: str):
 
 @app.get('/bid/{auction_id}', response_model=serializers.BidRequest)
 async def start_bidding(auction_id: str):
-    # query = data_model.Bidder.select()
-    # bidders = await database.fetch_all(query)
     bidders = data_model.localdb.bidders
     responses = await trigger_bidders_to_bid(bidders)
     print(responses)
